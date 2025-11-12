@@ -1,168 +1,495 @@
-// 🔥 CONFIGURACIÓN: URL de tu API en Render
-const API_URL = window.location.hostname === 'localhost' 
-  ? '/api/autores'  // Para desarrollo local
-  : 'https://ia-crud-4q94.onrender.com/api/autores'; // ✅ Para producción en Render
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CRUD de Autores - IA</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
 
-const autorForm   = document.getElementById('autorForm');
-const tableBody   = document.querySelector('.table-container tbody');
-const btnCreate   = document.getElementById('btn-create');
-const btnUpdate   = document.getElementById('btn-update');
-const btnDelete   = document.getElementById('btn-delete');
-const btnList     = document.getElementById('btn-list');
-const inputId     = document.getElementById('id');
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
 
-// ============================ Utilidad ============================
-async function apiRequest(method, endpoint, data = null) {
-  const options = { 
-    method, 
-    headers: { 'Content-Type': 'application/json' },
-    mode: 'cors'
-  };
-  if (data) options.body = JSON.stringify(data);
-  
-  try {
-    const res = await fetch(endpoint, options);
-    return res;
-  } catch (error) {
-    console.error('Error en la petición:', error);
-    throw error;
-  }
-}
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            overflow: hidden;
+        }
 
-function limpiarFormulario() {
-  autorForm.reset();
-  inputId.value = '';
-}
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
 
-// ============================ CREATE =============================
-btnCreate.addEventListener('click', async () => {
-  const nombre = document.getElementById('nombre').value.trim();
-  const nacionalidad = document.getElementById('nacionalidad').value.trim();
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
 
-  if (!nombre) {
-    alert('El nombre es obligatorio para crear.');
-    return;
-  }
+        .header p {
+            opacity: 0.9;
+            font-size: 1.1em;
+        }
 
-  try {
-    const res  = await apiRequest('POST', API_URL, { nombre, nacionalidad });
-    const data = await res.json();
+        .content {
+            padding: 30px;
+        }
 
-    if (res.ok) {
-      alert(`Autor creado con éxito. ID: ${data.id}`);
-      limpiarFormulario();
-      cargarAutores();
-    } else {
-      alert(`Error al crear autor: ${data.error || data.mensaje || 'Error desconocido.'}`);
-    }
-  } catch (e) {
-    console.error(e);
-    alert('No se pudo conectar al servidor API. Verifica que el servidor esté corriendo.');
-  }
-});
+        .form-section {
+            background: #f8f9fa;
+            padding: 25px;
+            border-radius: 10px;
+            margin-bottom: 30px;
+        }
 
-// ============================ UPDATE =============================
-btnUpdate.addEventListener('click', async () => {
-  const id = inputId.value;
-  const nombre = document.getElementById('nombre').value.trim();
-  const nacionalidad = document.getElementById('nacionalidad').value.trim();
+        .form-section h2 {
+            color: #667eea;
+            margin-bottom: 20px;
+            font-size: 1.5em;
+        }
 
-  if (!id)      return alert('Debe seleccionar un autor de la lista para actualizar.');
-  if (!nombre)  return alert('El nombre es obligatorio para actualizar.');
+        #autorForm {
+            display: grid;
+            gap: 15px;
+        }
 
-  try {
-    const res  = await apiRequest('PUT', `${API_URL}/${id}`, { nombre, nacionalidad });
-    const data = await res.json();
+        .form-group {
+            display: flex;
+            flex-direction: column;
+        }
 
-    if (res.ok) {
-      alert('Autor actualizado exitosamente.');
-      limpiarFormulario();
-      cargarAutores();
-    } else {
-      alert(`Error al actualizar: ${data.error || data.mensaje || 'Error desconocido.'}`);
-    }
-  } catch (e) {
-    console.error(e);
-    alert('No se pudo conectar al servidor API.');
-  }
-});
+        label {
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 5px;
+        }
 
-// ============================ DELETE =============================
-btnDelete.addEventListener('click', async () => {
-  const id = inputId.value;
-  if (!id) return alert('Debe seleccionar un autor de la lista para eliminar.');
-  if (!confirm(`¿Eliminar autor con ID ${id}?`)) return;
+        input[type="text"],
+        input[type="hidden"] {
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 1em;
+            transition: all 0.3s;
+        }
 
-  try {
-    const res  = await apiRequest('DELETE', `${API_URL}/${id}`);
-    const data = await res.json();
+        input[type="text"]:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
 
-    if (res.ok) {
-      alert('Autor eliminado exitosamente.');
-      limpiarFormulario();
-      cargarAutores();
-    } else {
-      alert(`Error al eliminar: ${data.error || data.mensaje || 'Error desconocido.'}`);
-    }
-  } catch (e) {
-    console.error(e);
-    alert('No se pudo conectar al servidor API.');
-  }
-});
+        .button-group {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+            gap: 10px;
+            margin-top: 15px;
+        }
 
-// ============================ READ ===============================
-function seleccionarAutor(autor) {
-  inputId.value = autor.id;
-  document.getElementById('nombre').value = autor.nombre;
-  document.getElementById('nacionalidad').value = autor.nacionalidad || '';
-}
+        button {
+            padding: 12px 20px;
+            border: none;
+            border-radius: 8px;
+            font-size: 1em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            color: white;
+        }
 
-async function cargarAutores() {
-  try {
-    const res = await fetch(API_URL, { mode: 'cors' });
-    if (!res.ok) throw new Error(`Error en la API: ${res.status} ${res.statusText}`);
+        #btn-create {
+            background: #28a745;
+        }
 
-    const autores = await res.json();
-    tableBody.innerHTML = '';
+        #btn-create:hover {
+            background: #218838;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(40, 167, 69, 0.3);
+        }
 
-    if (!autores.length) {
-      tableBody.innerHTML = '<tr><td colspan="4" style="text-align:center;">No hay autores registrados.</td></tr>';
-      return;
-    }
+        #btn-update {
+            background: #ffc107;
+        }
 
-    autores.forEach(autor => {
-      const row = tableBody.insertRow();
-      const fechaCreacion = new Date(autor.fecha_creacion).toLocaleString('es-CO', {
-        year: 'numeric', month: '2-digit', day: '2-digit',
-        hour: '2-digit', minute: '2-digit', second: '2-digit'
-      });
-      row.innerHTML = `
-        <td>${autor.id}</td>
-        <td>${autor.nombre}</td>
-        <td>${autor.nacionalidad || ''}</td>
-        <td>${fechaCreacion}</td>
-      `;
-      row.addEventListener('click', () => seleccionarAutor(autor));
-    });
-  } catch (e) {
-    console.error('Error al cargar la lista de autores:', e);
-    tableBody.innerHTML = `<tr><td colspan="4" style="text-align:center;color:red;">Error de conexión: ${e.message}. Verifica que el servidor esté corriendo.</td></tr>`;
-  }
-}
+        #btn-update:hover {
+            background: #e0a800;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(255, 193, 7, 0.3);
+        }
 
-// ============================ Init ===============================
-document.addEventListener('DOMContentLoaded', () => {
-  // Cargar autores al iniciar
-  cargarAutores();
-  
-  // Listener para el botón listar
-  if (btnList) {
-    btnList.onclick = cargarAutores;
-  }
-  
-  // Listener para botón reset (solo si existe)
-  const btnReset = document.querySelector('button[type="reset"]');
-  if (btnReset) {
-    btnReset.addEventListener('click', limpiarFormulario);
-  }
-});
+        #btn-delete {
+            background: #dc3545;
+        }
+
+        #btn-delete:hover {
+            background: #c82333;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(220, 53, 69, 0.3);
+        }
+
+        #btn-list {
+            background: #17a2b8;
+        }
+
+        #btn-list:hover {
+            background: #138496;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(23, 162, 184, 0.3);
+        }
+
+        button[type="reset"] {
+            background: #6c757d;
+        }
+
+        button[type="reset"]:hover {
+            background: #5a6268;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(108, 117, 125, 0.3);
+        }
+
+        .table-section {
+            margin-top: 30px;
+        }
+
+        .table-section h2 {
+            color: #667eea;
+            margin-bottom: 20px;
+            font-size: 1.5em;
+        }
+
+        .table-container {
+            overflow-x: auto;
+            border-radius: 10px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background: white;
+        }
+
+        thead {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        th, td {
+            padding: 15px;
+            text-align: left;
+        }
+
+        th {
+            font-weight: 600;
+            text-transform: uppercase;
+            font-size: 0.9em;
+            letter-spacing: 0.5px;
+        }
+
+        tbody tr {
+            border-bottom: 1px solid #e0e0e0;
+            transition: all 0.3s;
+            cursor: pointer;
+        }
+
+        tbody tr:hover {
+            background: #f8f9fa;
+            transform: scale(1.01);
+        }
+
+        tbody tr:last-child {
+            border-bottom: none;
+        }
+
+        .status {
+            display: inline-block;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+            font-weight: 500;
+        }
+
+        .status.loading {
+            background: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+
+        .status.error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+
+        .status.success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        @media (max-width: 768px) {
+            .button-group {
+                grid-template-columns: 1fr;
+            }
+
+            .header h1 {
+                font-size: 1.8em;
+            }
+
+            table {
+                font-size: 0.9em;
+            }
+
+            th, td {
+                padding: 10px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>📚 CRUD de Autores</h1>
+            <p>Sistema de gestión de autores con API REST</p>
+        </div>
+
+        <div class="content">
+            <!-- Formulario -->
+            <div class="form-section">
+                <h2>Gestionar Autores</h2>
+                <form id="autorForm">
+                    <input type="hidden" id="id">
+                    
+                    <div class="form-group">
+                        <label for="nombre">Nombre del Autor *</label>
+                        <input type="text" id="nombre" placeholder="Ejemplo: Gabriel García Márquez" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="nacionalidad">Nacionalidad</label>
+                        <input type="text" id="nacionalidad" placeholder="Ejemplo: Colombiano">
+                    </div>
+
+                    <div class="button-group">
+                        <button type="button" id="btn-create">✅ Crear</button>
+                        <button type="button" id="btn-update">✏️ Actualizar</button>
+                        <button type="button" id="btn-delete">🗑️ Eliminar</button>
+                        <button type="button" id="btn-list">📋 Listar</button>
+                        <button type="reset">🔄 Limpiar</button>
+                    </div>
+                </form>
+            </div>
+
+            <!-- Tabla -->
+            <div class="table-section">
+                <h2>Lista de Autores</h2>
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Nombre</th>
+                                <th>Nacionalidad</th>
+                                <th>Fecha de Creación</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td colspan="4" style="text-align:center;">Cargando autores...</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 🔥 CONFIGURACIÓN: URL de tu API en Render
+        const API_URL = window.location.hostname === 'localhost' 
+            ? '/api/autores'
+            : 'https://ia-crud-4q94.onrender.com/api/autores';
+
+        const autorForm   = document.getElementById('autorForm');
+        const tableBody   = document.querySelector('.table-container tbody');
+        const btnCreate   = document.getElementById('btn-create');
+        const btnUpdate   = document.getElementById('btn-update');
+        const btnDelete   = document.getElementById('btn-delete');
+        const btnList     = document.getElementById('btn-list');
+        const inputId     = document.getElementById('id');
+
+        // ============================ Utilidad ============================
+        async function apiRequest(method, endpoint, data = null) {
+            const options = { 
+                method, 
+                headers: { 'Content-Type': 'application/json' },
+                mode: 'cors'
+            };
+            if (data) options.body = JSON.stringify(data);
+            
+            try {
+                const res = await fetch(endpoint, options);
+                return res;
+            } catch (error) {
+                console.error('Error en la petición:', error);
+                throw error;
+            }
+        }
+
+        function limpiarFormulario() {
+            autorForm.reset();
+            inputId.value = '';
+        }
+
+        // ============================ CREATE =============================
+        btnCreate.addEventListener('click', async () => {
+            const nombre = document.getElementById('nombre').value.trim();
+            const nacionalidad = document.getElementById('nacionalidad').value.trim();
+
+            if (!nombre) {
+                alert('El nombre es obligatorio para crear.');
+                return;
+            }
+
+            try {
+                const res  = await apiRequest('POST', API_URL, { nombre, nacionalidad });
+                const data = await res.json();
+
+                if (res.ok) {
+                    alert(`✅ Autor creado con éxito. ID: ${data.id}`);
+                    limpiarFormulario();
+                    cargarAutores();
+                } else {
+                    alert(`❌ Error al crear autor: ${data.error || data.mensaje || 'Error desconocido.'}`);
+                }
+            } catch (e) {
+                console.error(e);
+                alert('❌ No se pudo conectar al servidor API.');
+            }
+        });
+
+        // ============================ UPDATE =============================
+        btnUpdate.addEventListener('click', async () => {
+            const id = inputId.value;
+            const nombre = document.getElementById('nombre').value.trim();
+            const nacionalidad = document.getElementById('nacionalidad').value.trim();
+
+            if (!id)      return alert('⚠️ Debe seleccionar un autor de la lista para actualizar.');
+            if (!nombre)  return alert('⚠️ El nombre es obligatorio para actualizar.');
+
+            try {
+                const res  = await apiRequest('PUT', `${API_URL}/${id}`, { nombre, nacionalidad });
+                const data = await res.json();
+
+                if (res.ok) {
+                    alert('✅ Autor actualizado exitosamente.');
+                    limpiarFormulario();
+                    cargarAutores();
+                } else {
+                    alert(`❌ Error al actualizar: ${data.error || data.mensaje || 'Error desconocido.'}`);
+                }
+            } catch (e) {
+                console.error(e);
+                alert('❌ No se pudo conectar al servidor API.');
+            }
+        });
+
+        // ============================ DELETE =============================
+        btnDelete.addEventListener('click', async () => {
+            const id = inputId.value;
+            if (!id) return alert('⚠️ Debe seleccionar un autor de la lista para eliminar.');
+            if (!confirm(`🗑️ ¿Estás seguro de eliminar el autor con ID ${id}?`)) return;
+
+            try {
+                const res  = await apiRequest('DELETE', `${API_URL}/${id}`);
+                const data = await res.json();
+
+                if (res.ok) {
+                    alert('✅ Autor eliminado exitosamente.');
+                    limpiarFormulario();
+                    cargarAutores();
+                } else {
+                    alert(`❌ Error al eliminar: ${data.error || data.mensaje || 'Error desconocido.'}`);
+                }
+            } catch (e) {
+                console.error(e);
+                alert('❌ No se pudo conectar al servidor API.');
+            }
+        });
+
+        // ============================ READ ===============================
+        function seleccionarAutor(autor) {
+            inputId.value = autor.id;
+            document.getElementById('nombre').value = autor.nombre;
+            document.getElementById('nacionalidad').value = autor.nacionalidad || '';
+            
+            // Scroll al formulario
+            document.querySelector('.form-section').scrollIntoView({ behavior: 'smooth' });
+        }
+
+        async function cargarAutores() {
+            try {
+                tableBody.innerHTML = '<tr><td colspan="4" style="text-align:center;">⏳ Cargando autores...</td></tr>';
+                
+                const res = await fetch(API_URL, { mode: 'cors' });
+                if (!res.ok) throw new Error(`Error ${res.status}: ${res.statusText}`);
+
+                const autores = await res.json();
+                tableBody.innerHTML = '';
+
+                if (!autores.length) {
+                    tableBody.innerHTML = '<tr><td colspan="4" style="text-align:center;">📭 No hay autores registrados.</td></tr>';
+                    return;
+                }
+
+                autores.forEach(autor => {
+                    const row = tableBody.insertRow();
+                    const fechaCreacion = new Date(autor.fecha_creacion).toLocaleString('es-CO', {
+                        year: 'numeric', month: '2-digit', day: '2-digit',
+                        hour: '2-digit', minute: '2-digit', second: '2-digit'
+                    });
+                    row.innerHTML = `
+                        <td>${autor.id}</td>
+                        <td>${autor.nombre}</td>
+                        <td>${autor.nacionalidad || '-'}</td>
+                        <td>${fechaCreacion}</td>
+                    `;
+                    row.addEventListener('click', () => seleccionarAutor(autor));
+                });
+            } catch (e) {
+                console.error('Error al cargar autores:', e);
+                tableBody.innerHTML = `<tr><td colspan="4" style="text-align:center;color:red;">❌ Error: ${e.message}</td></tr>`;
+            }
+        }
+
+        // ============================ Init ===============================
+        document.addEventListener('DOMContentLoaded', () => {
+            console.log('🚀 Aplicación iniciada');
+            console.log('📡 API URL:', API_URL);
+            cargarAutores();
+            
+            if (btnList) {
+                btnList.onclick = cargarAutores;
+            }
+            
+            const btnReset = document.querySelector('button[type="reset"]');
+            if (btnReset) {
+                btnReset.addEventListener('click', limpiarFormulario);
+            }
+        });
+    </script>
+</body>
+</html>
