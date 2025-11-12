@@ -1,146 +1,156 @@
-<script>
-  // Endpoint relativo al mismo dominio (Render o local)
-  const API_URL = "/api/autores";
 
-  const autorForm   = document.getElementById('autorForm');
-  const tableBody   = document.querySelector('.table-container tbody');
-  const btnCreate   = document.getElementById('btn-create');
-  const btnUpdate   = document.getElementById('btn-update');
-  const btnDelete   = document.getElementById('btn-delete');
-  const btnList     = document.getElementById('btn-list');
-  const inputId     = document.getElementById('id');
+const API_URL = window.location.hostname === 'localhost' 
+  ? '/api/autores'  // Para desarrollo local
+  : 'https://ia-crud-4q94.onrender.com'; // Para producción en Render
 
-  // ============================ Utilidad ============================
-  async function apiRequest(method, endpoint, data = null) {
-    const options = { method, headers: { 'Content-Type': 'application/json' } };
-    if (data) options.body = JSON.stringify(data);
+const autorForm   = document.getElementById('autorForm');
+const tableBody   = document.querySelector('.table-container tbody');
+const btnCreate   = document.getElementById('btn-create');
+const btnUpdate   = document.getElementById('btn-update');
+const btnDelete   = document.getElementById('btn-delete');
+const btnList     = document.getElementById('btn-list');
+const inputId     = document.getElementById('id');
+
+// ============================ Utilidad ============================
+async function apiRequest(method, endpoint, data = null) {
+  const options = { 
+    method, 
+    headers: { 'Content-Type': 'application/json' },
+    mode: 'cors' // Importante para peticiones cross-origin
+  };
+  if (data) options.body = JSON.stringify(data);
+  
+  try {
     const res = await fetch(endpoint, options);
     return res;
+  } catch (error) {
+    console.error('Error en la petición:', error);
+    throw error;
+  }
+}
+
+function limpiarFormulario() {
+  autorForm.reset();
+  inputId.value = '';
+}
+
+// ============================ CREATE =============================
+btnCreate.addEventListener('click', async () => {
+  const nombre = document.getElementById('nombre').value.trim();
+  const nacionalidad = document.getElementById('nacionalidad').value.trim();
+
+  if (!nombre) {
+    alert('El nombre es obligatorio para crear.');
+    return;
   }
 
-  function limpiarFormulario() {
-    autorForm.reset();
-    inputId.value = '';
+  try {
+    const res  = await apiRequest('POST', API_URL, { nombre, nacionalidad });
+    const data = await res.json();
+
+    if (res.ok) {
+      alert(`Autor creado con éxito. ID: ${data.id}`);
+      limpiarFormulario();
+      cargarAutores();
+    } else {
+      alert(`Error al crear autor: ${data.error || data.mensaje || 'Error desconocido.'}`);
+    }
+  } catch (e) {
+    console.error(e);
+    alert('No se pudo conectar al servidor API. Verifica que el servidor esté corriendo.');
   }
+});
 
-  // ============================ CREATE =============================
-  btnCreate.addEventListener('click', async () => {
-    const nombre = document.getElementById('nombre').value.trim();
-    const nacionalidad = document.getElementById('nacionalidad').value.trim();
+// ============================ UPDATE =============================
+btnUpdate.addEventListener('click', async () => {
+  const id = inputId.value;
+  const nombre = document.getElementById('nombre').value.trim();
+  const nacionalidad = document.getElementById('nacionalidad').value.trim();
 
-    if (!nombre) {
-      alert('El nombre es obligatorio para crear.');
+  if (!id)      return alert('Debe seleccionar un autor de la lista para actualizar.');
+  if (!nombre)  return alert('El nombre es obligatorio para actualizar.');
+
+  try {
+    const res  = await apiRequest('PUT', `${API_URL}/${id}`, { nombre, nacionalidad });
+    const data = await res.json();
+
+    if (res.ok) {
+      alert('Autor actualizado exitosamente.');
+      limpiarFormulario();
+      cargarAutores();
+    } else {
+      alert(`Error al actualizar: ${data.error || data.mensaje || 'Error desconocido.'}`);
+    }
+  } catch (e) {
+    console.error(e);
+    alert('No se pudo conectar al servidor API.');
+  }
+});
+
+// ============================ DELETE =============================
+btnDelete.addEventListener('click', async () => {
+  const id = inputId.value;
+  if (!id) return alert('Debe seleccionar un autor de la lista para eliminar.');
+  if (!confirm(`¿Eliminar autor con ID ${id}?`)) return;
+
+  try {
+    const res  = await apiRequest('DELETE', `${API_URL}/${id}`);
+    const data = await res.json();
+
+    if (res.ok) {
+      alert('Autor eliminado exitosamente.');
+      limpiarFormulario();
+      cargarAutores();
+    } else {
+      alert(`Error al eliminar: ${data.error || data.mensaje || 'Error desconocido.'}`);
+    }
+  } catch (e) {
+    console.error(e);
+    alert('No se pudo conectar al servidor API.');
+  }
+});
+
+// ============================ READ ===============================
+function seleccionarAutor(autor) {
+  inputId.value = autor.id;
+  document.getElementById('nombre').value = autor.nombre;
+  document.getElementById('nacionalidad').value = autor.nacionalidad || '';
+}
+
+async function cargarAutores() {
+  try {
+    const res = await fetch(API_URL, { mode: 'cors' });
+    if (!res.ok) throw new Error(`Error en la API: ${res.status} ${res.statusText}`);
+
+    const autores = await res.json();
+    tableBody.innerHTML = '';
+
+    if (!autores.length) {
+      tableBody.innerHTML = '<tr><td colspan="4" style="text-align:center;">No hay autores registrados.</td></tr>';
       return;
     }
 
-    try {
-      const res  = await apiRequest('POST', API_URL, { nombre, nacionalidad });
-      const data = await res.json();
-
-      if (res.ok) {
-        alert(`Autor creado con éxito. ID: ${data.id}`);
-        limpiarFormulario();
-        cargarAutores();
-      } else {
-        alert(`Error al crear autor: ${data.error || data.mensaje || 'Error desconocido.'}`);
-      }
-    } catch (e) {
-      console.error(e);
-      alert('No se pudo conectar al servidor API.');
-    }
-  });
-
-  // ============================ UPDATE =============================
-  btnUpdate.addEventListener('click', async () => {
-    const id = inputId.value;
-    const nombre = document.getElementById('nombre').value.trim();
-    const nacionalidad = document.getElementById('nacionalidad').value.trim();
-
-    if (!id)      return alert('Debe seleccionar un autor de la lista para actualizar.');
-    if (!nombre)  return alert('El nombre es obligatorio para actualizar.');
-
-    try {
-      const res  = await apiRequest('PUT', `${API_URL}/${id}`, { nombre, nacionalidad });
-      const data = await res.json();
-
-      if (res.ok) {
-        alert('Autor actualizado exitosamente.');
-        limpiarFormulario();
-        cargarAutores();
-      } else {
-        alert(`Error al actualizar: ${data.error || data.mensaje || 'Error desconocido.'}`);
-      }
-    } catch (e) {
-      console.error(e);
-      alert('No se pudo conectar al servidor API.');
-    }
-  });
-
-  // ============================ DELETE =============================
-  btnDelete.addEventListener('click', async () => {
-    const id = inputId.value;
-    if (!id) return alert('Debe seleccionar un autor de la lista para eliminar.');
-    if (!confirm(`¿Eliminar autor con ID ${id}?`)) return;
-
-    try {
-      const res  = await apiRequest('DELETE', `${API_URL}/${id}`);
-      const data = await res.json();
-
-      if (res.ok) {
-        alert('Autor eliminado exitosamente.');
-        limpiarFormulario();
-        cargarAutores();
-      } else {
-        alert(`Error al eliminar: ${data.error || data.mensaje || 'Error desconocido.'}`);
-      }
-    } catch (e) {
-      console.error(e);
-      alert('No se pudo conectar al servidor API.');
-    }
-  });
-
-  // ============================ READ ===============================
-  function seleccionarAutor(autor) {
-    inputId.value = autor.id;
-    document.getElementById('nombre').value = autor.nombre;
-    document.getElementById('nacionalidad').value = autor.nacionalidad || '';
-  }
-
-  async function cargarAutores() {
-    try {
-      const res = await fetch(API_URL);
-      if (!res.ok) throw new Error(`Error en la API: ${res.status} ${res.statusText}`);
-
-      const autores = await res.json();
-      tableBody.innerHTML = '';
-
-      if (!autores.length) {
-        tableBody.innerHTML = '<tr><td colspan="4" style="text-align:center;">No hay autores registrados.</td></tr>';
-        return;
-      }
-
-      autores.forEach(autor => {
-        const row = tableBody.insertRow();
-        const fechaCreacion = new Date(autor.fecha_creacion).toLocaleString('es-CO', {
-          year: 'numeric', month: '2-digit', day: '2-digit',
-          hour: '2-digit', minute: '2-digit', second: '2-digit'
-        });
-        row.innerHTML = `
-          <td>${autor.id}</td>
-          <td>${autor.nombre}</td>
-          <td>${autor.nacionalidad || ''}</td>
-          <td>${fechaCreacion}</td>
-        `;
-        row.addEventListener('click', () => seleccionarAutor(autor));
+    autores.forEach(autor => {
+      const row = tableBody.insertRow();
+      const fechaCreacion = new Date(autor.fecha_creacion).toLocaleString('es-CO', {
+        year: 'numeric', month: '2-digit', day: '2-digit',
+        hour: '2-digit', minute: '2-digit', second: '2-digit'
       });
-    } catch (e) {
-      console.error('Error al cargar la lista de autores:', e);
-      tableBody.innerHTML = `<tr><td colspan="4" style="text-align:center;color:red;">Error de conexión: ${e.message}.</td></tr>`;
-    }
+      row.innerHTML = `
+        <td>${autor.id}</td>
+        <td>${autor.nombre}</td>
+        <td>${autor.nacionalidad || ''}</td>
+        <td>${fechaCreacion}</td>
+      `;
+      row.addEventListener('click', () => seleccionarAutor(autor));
+    });
+  } catch (e) {
+    console.error('Error al cargar la lista de autores:', e);
+    tableBody.innerHTML = `<tr><td colspan="4" style="text-align:center;color:red;">Error de conexión: ${e.message}. Verifica que el servidor esté corriendo.</td></tr>`;
   }
+}
 
-  // ============================ Init ===============================
-  btnList.onclick = cargarAutores;
-  document.addEventListener('DOMContentLoaded', cargarAutores);
-  document.querySelector('button[type="reset"]').addEventListener('click', limpiarFormulario);
-</script>
+// ============================ Init ===============================
+document.getElementById('btn-list').onclick = cargarAutores;
+document.addEventListener('DOMContentLoaded', cargarAutores);
+document.querySelector('button[type="reset"]').addEventListener('click', limpiarFormulario);
