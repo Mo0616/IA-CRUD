@@ -1,7 +1,7 @@
-
+// 🔥 CONFIGURACIÓN: URL de tu API en Render
 const API_URL = window.location.hostname === 'localhost' 
   ? '/api/autores'  // Para desarrollo local
-  : 'https://ia-crud-4q94.onrender.com'; // Para producción en Render
+  : 'https://ia-crud-4q94.onrender.com/api/autores'; // ✅ Para producción en Render
 
 const autorForm   = document.getElementById('autorForm');
 const tableBody   = document.querySelector('.table-container tbody');
@@ -16,7 +16,7 @@ async function apiRequest(method, endpoint, data = null) {
   const options = { 
     method, 
     headers: { 'Content-Type': 'application/json' },
-    mode: 'cors' // Importante para peticiones cross-origin
+    mode: 'cors'
   };
   if (data) options.body = JSON.stringify(data);
   
@@ -151,6 +151,18 @@ async function cargarAutores() {
 }
 
 // ============================ Init ===============================
-document.getElementById('btn-list').onclick = cargarAutores;
-document.addEventListener('DOMContentLoaded', cargarAutores);
-document.querySelector('button[type="reset"]').addEventListener('click', limpiarFormulario);
+document.addEventListener('DOMContentLoaded', () => {
+  // Cargar autores al iniciar
+  cargarAutores();
+  
+  // Listener para el botón listar
+  if (btnList) {
+    btnList.onclick = cargarAutores;
+  }
+  
+  // Listener para botón reset (solo si existe)
+  const btnReset = document.querySelector('button[type="reset"]');
+  if (btnReset) {
+    btnReset.addEventListener('click', limpiarFormulario);
+  }
+});
