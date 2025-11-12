@@ -1,17 +1,26 @@
-// db.js
+// db.js  (PostgreSQL en Render)
+const { Pool } = require('pg');
 
-const mysql = require('mysql2');
-
-// Configuración de la conexión a la base de datos "IA-CRUD"
-const pool = mysql.createPool({
-    host: 'localhost', // O la dirección de tu servidor de BD
-    user: 'root',      // Tu usuario de MySQL
-    password: '', // Tu contraseña de MySQL
-    database: 'IA-CRUD', // Nombre de la base de datos
-    waitForConnections: true,
-    connectionLimit: 10,
-    queueLimit: 0
+const pool = new Pool({
+  connectionString: process.env.DATABASE_URL, // pega la Internal Database URL en Render
+  ssl: process.env.PGSSL === 'true' ? { rejectUnauthorized: false } : undefined
 });
 
-// Exportar el pool para ser usado en los controladores
-module.exports = pool.promise();
+// crea la tabla si no existe
+(async () => {
+  try {
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS autor (
+        id SERIAL PRIMARY KEY,
+        nombre VARCHAR(100) NOT NULL,
+        nacionalidad VARCHAR(50),
+        fecha_creacion TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      )
+    `);
+    console.log('Tabla autor verificada/creada');
+  } catch (e) {
+    console.error('Error creando tabla autor:', e);
+  }
+})();
+
+module.exports = pool;
