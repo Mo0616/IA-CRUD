@@ -1,7 +1,7 @@
-// autorController.js (versión Postgres)
+// autorController.js — versión PostgreSQL, nombres compatibles con tu server.js
 const pool = require('./db');
 
-// Crear autor
+// C: Crear un autor
 async function crearAutor(req, res) {
   try {
     const { nombre, nacionalidad } = req.body;
@@ -18,26 +18,42 @@ async function crearAutor(req, res) {
   }
 }
 
-// Listar autores
-async function listarAutores(req, res) {
+// R: Obtener todos
+async function obtenerAutores(req, res) {
   try {
     const { rows } = await pool.query(
       'SELECT id, nombre, nacionalidad, fecha_creacion FROM autor ORDER BY id ASC'
     );
     res.json(rows);
   } catch (err) {
-    console.error('listarAutores error:', err);
+    console.error('obtenerAutores error:', err);
     res.status(500).json({ error: 'Error interno' });
   }
 }
 
-// Actualizar autor
+// R: Obtener por ID
+async function obtenerAutorPorId(req, res) {
+  try {
+    const { id } = req.params;
+    const { rows } = await pool.query(
+      'SELECT id, nombre, nacionalidad, fecha_creacion FROM autor WHERE id=$1',
+      [id]
+    );
+    if (rows.length === 0) return res.status(404).json({ error: 'Autor no encontrado' });
+    res.json(rows[0]);
+  } catch (err) {
+    console.error('obtenerAutorPorId error:', err);
+    res.status(500).json({ error: 'Error interno' });
+  }
+}
+
+// U: Actualizar
 async function actualizarAutor(req, res) {
   try {
     const { id } = req.params;
     const { nombre, nacionalidad } = req.body;
 
-    const { rowCount, rows } = await pool.query(
+    const { rows, rowCount } = await pool.query(
       'UPDATE autor SET nombre=$1, nacionalidad=$2 WHERE id=$3 RETURNING *',
       [nombre, nacionalidad || null, id]
     );
@@ -49,7 +65,7 @@ async function actualizarAutor(req, res) {
   }
 }
 
-// Eliminar autor
+// D: Eliminar
 async function eliminarAutor(req, res) {
   try {
     const { id } = req.params;
@@ -62,4 +78,10 @@ async function eliminarAutor(req, res) {
   }
 }
 
-module.exports = { crearAutor, listarAutores, actualizarAutor, eliminarAutor };
+module.exports = {
+  crearAutor,
+  obtenerAutores,
+  obtenerAutorPorId,
+  actualizarAutor,
+  eliminarAutor
+};

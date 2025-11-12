@@ -5,7 +5,7 @@ const autorController = require('./autorController');
 const path = require('path'); // Importar el módulo path
 
 const app = express();
-const PORT = 3000;
+const PORT = process.env.PORT || 3000;
 
 // Middleware para parsear el cuerpo de las peticiones a JSON
 app.use(express.json());

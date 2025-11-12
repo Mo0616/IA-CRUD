@@ -1,8 +1,8 @@
-// db.js  (PostgreSQL en Render)
+// db.js — PostgreSQL en Render
 const { Pool } = require('pg');
 
 const pool = new Pool({
-  connectionString: process.env.DATABASE_URL, // pega la Internal Database URL en Render
+  connectionString: process.env.DATABASE_URL,
   ssl: process.env.PGSSL === 'true' ? { rejectUnauthorized: false } : undefined
 });
 
