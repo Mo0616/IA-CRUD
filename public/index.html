@@ -1,366 +1,146 @@
-<!DOCTYPE html>
-<html lang="es">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CRUD de Autor</title>
-    <style>
-        /* CSS Básico (Simulando el CSS Suministrado) */
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            margin: 20px;
-            background-color: #eef1f5;
-        }
-        .container {
-            max-width: 800px;
-            margin: auto;
-            background: white;
-            padding: 30px;
-            border-radius: 12px;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-        }
-        h2, h3 {
-            text-align: center;
-            color: #2c3e50;
-            border-bottom: 2px solid #3498db;
-            padding-bottom: 10px;
-            margin-bottom: 20px;
-        }
-        .form-group {
-            margin-bottom: 15px;
-        }
-        .form-group label {
-            display: block;
-            margin-bottom: 5px;
-            font-weight: 600;
-            color: #34495e;
-        }
-        .form-group input[type="text"] {
-            width: 100%;
-            padding: 10px;
-            border: 1px solid #bdc3c7;
-            border-radius: 6px;
-            box-sizing: border-box; 
-            transition: border-color 0.3s;
-        }
-        .form-group input[type="text"]:focus {
-            border-color: #3498db;
-            outline: none;
-        }
-        .button-group {
-            display: flex;
-            gap: 15px;
-            justify-content: center;
-            margin-top: 20px;
-        }
-        .button-group button {
-            padding: 10px 20px;
-            border: none;
-            border-radius: 6px;
-            cursor: pointer;
-            font-weight: bold;
-            color: white;
-            transition: background-color 0.3s, transform 0.1s;
-        }
-        .button-group button:hover {
-            transform: translateY(-2px);
-        }
-        /* Estilos específicos para las acciones CRUD */
-        .button-create { background-color: #2ecc71; } /* Verde para Crear */
-        .button-update { background-color: #f39c12; } /* Naranja para Actualizar */
-        .button-delete { background-color: #e74c3c; } /* Rojo para Eliminar */
-        .button-list { background-color: #3498db; }  /* Azul para Listar */
-
-        /* Estilos para la tabla (Read) */
-        .table-container {
-            margin-top: 40px;
-            overflow-x: auto;
-        }
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-top: 15px;
-        }
-        th, td {
-            border: 1px solid #ecf0f1;
-            padding: 12px;
-            text-align: left;
-        }
-        th {
-            background-color: #2c3e50;
-            color: white;
-        }
-        tbody tr:nth-child(even) {
-            background-color: #f8f9fa;
-        }
-        tbody tr:hover {
-            background-color: #e0f7fa;
-            cursor: pointer;
-        }
-    </style>
-</head>
-<body>
-    <div class="container">
-        <h2>📚📚 Gestión de Autores (CRUD)📚📚</h2>
-
-        <form id="autorForm" method="POST" action="/api/autor">
-            <input type="hidden" id="id" name="id" value="" placeholder="ID del autor"> 
-
-            <div class="form-group">
-                <label for="nombre">Nombre del Autor (*)</label>
-                <input type="text" id="nombre" name="nombre" placeholder="Ej: Gabriel García Márquez" maxlength="100" required>
-            </div>
-
-            <div class="form-group">
-                <label for="nacionalidad">Nacionalidad</label>
-                <input type="text" id="nacionalidad" name="nacionalidad" placeholder="Ej: Colombiana" maxlength="50">
-            </div>
-
-            <div class="button-group">
-                <button type="button" id="btn-create" class="button-create">Crear</button>
-                <button type="button" id="btn-update" class="button-update">Actualizar</button>
-                <button type="button" id="btn-delete" class="button-delete">Eliminar</button>
-                <button type="reset" class="button-list" style="background-color: #95a5a6;">Limpiar Formulario</button>
-            </div>
-        </form>
-
-        <hr>
-
-        <div class="table-container">
-            <h3>📖 Listado de Autores Existentes</h3>
-            <p>Esta tabla representa la vista de los registros almacenados en la base de datos.</p>
-            
-            <div class="button-group" style="justify-content: flex-start;">
-                <button class="button-list" onclick="alert('Lógica para obtener y mostrar la lista de autores...');">Actualizar Lista</button>
-            </div>
-            
-            <table>
-                <thead>
-                    <tr>
-                        <th>ID</th>
-                        <th>Nombre</th>
-                        <th>Nacionalidad</th>
-                        <th>Fecha Creación</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <tr>
-                        <td>1</td>
-                        <td>Gabriel García Márquez</td>
-                        <td>Colombiana</td>
-                        <td>2024-01-15 10:30:00</td>
-                    </tr>
-                    <tr>
-                        <td>2</td>
-                        <td>Isabel Allende</td>
-                        <td>Chilena</td>
-                        <td>2024-02-20 12:45:00</td>
-                    </tr>
-                    </tbody>
-            </table>
-        </div>
-
-    </div>
 <script>
-    const API_BASE_URL = 'http://localhost:3000/api/autores';
-    const autorForm = document.getElementById('autorForm');
-    const tableBody = document.querySelector('.table-container tbody');
+  // Endpoint relativo al mismo dominio (Render o local)
+  const API_URL = "/api/autores";
 
-    // Botones
-    const btnCreate = document.getElementById('btn-create');
-    const btnUpdate = document.getElementById('btn-update');
-    const btnDelete = document.getElementById('btn-delete');
-    const inputId = document.getElementById('id');
-    const updateListButton = document.querySelector('.button-group button.button-list');
-    
-    // ==========================================================
-    // FUNCIONES DE UTILIDAD
-    // ==========================================================
-    
-    // Función central para hacer peticiones fetch a la API
-    async function apiRequest(method, endpoint, data = null) {
-        const options = {
-            method: method,
-            headers: { 'Content-Type': 'application/json' },
-        };
-        if (data) {
-            options.body = JSON.stringify(data);
-        }
+  const autorForm   = document.getElementById('autorForm');
+  const tableBody   = document.querySelector('.table-container tbody');
+  const btnCreate   = document.getElementById('btn-create');
+  const btnUpdate   = document.getElementById('btn-update');
+  const btnDelete   = document.getElementById('btn-delete');
+  const btnList     = document.getElementById('btn-list');
+  const inputId     = document.getElementById('id');
 
-        const response = await fetch(endpoint, options);
-        return response;
+  // ============================ Utilidad ============================
+  async function apiRequest(method, endpoint, data = null) {
+    const options = { method, headers: { 'Content-Type': 'application/json' } };
+    if (data) options.body = JSON.stringify(data);
+    const res = await fetch(endpoint, options);
+    return res;
+  }
+
+  function limpiarFormulario() {
+    autorForm.reset();
+    inputId.value = '';
+  }
+
+  // ============================ CREATE =============================
+  btnCreate.addEventListener('click', async () => {
+    const nombre = document.getElementById('nombre').value.trim();
+    const nacionalidad = document.getElementById('nacionalidad').value.trim();
+
+    if (!nombre) {
+      alert('El nombre es obligatorio para crear.');
+      return;
     }
 
-    // Limpia el formulario y prepara para una nueva creación
-    function limpiarFormulario() {
-        autorForm.reset();
-        inputId.value = ''; // Asegura que el ID esté vacío
+    try {
+      const res  = await apiRequest('POST', API_URL, { nombre, nacionalidad });
+      const data = await res.json();
+
+      if (res.ok) {
+        alert(`Autor creado con éxito. ID: ${data.id}`);
+        limpiarFormulario();
+        cargarAutores();
+      } else {
+        alert(`Error al crear autor: ${data.error || data.mensaje || 'Error desconocido.'}`);
+      }
+    } catch (e) {
+      console.error(e);
+      alert('No se pudo conectar al servidor API.');
     }
+  });
 
-    // ==========================================================
-    // C - CREATE
-    // ==========================================================
-    btnCreate.addEventListener('click', async function() {
-        if (!document.getElementById('nombre').value) {
-            alert('El nombre es obligatorio para crear.');
-            return;
-        }
+  // ============================ UPDATE =============================
+  btnUpdate.addEventListener('click', async () => {
+    const id = inputId.value;
+    const nombre = document.getElementById('nombre').value.trim();
+    const nacionalidad = document.getElementById('nacionalidad').value.trim();
 
-        const formData = {
-            nombre: document.getElementById('nombre').value,
-            nacionalidad: document.getElementById('nacionalidad').value
-        };
+    if (!id)      return alert('Debe seleccionar un autor de la lista para actualizar.');
+    if (!nombre)  return alert('El nombre es obligatorio para actualizar.');
 
-        try {
-            const response = await apiRequest('POST', API_BASE_URL, formData);
-            const data = await response.json();
+    try {
+      const res  = await apiRequest('PUT', `${API_URL}/${id}`, { nombre, nacionalidad });
+      const data = await res.json();
 
-            if (response.ok) {
-                alert('Autor Creado con éxito! ID: ' + data.id);
-                limpiarFormulario();
-                cargarAutores(); 
-            } else {
-                alert('Error al crear autor: ' + (data.mensaje || 'Error desconocido.'));
-            }
-        } catch (error) {
-            console.error('Error de conexión:', error);
-            alert('No se pudo conectar al servidor API.');
-        }
-    });
-
-
-    // ==========================================================
-    // U - UPDATE
-    // ==========================================================
-    btnUpdate.addEventListener('click', async function() {
-        const id = inputId.value;
-        if (!id) {
-            alert('Debe seleccionar un autor de la lista para actualizar.');
-            return;
-        }
-        if (!document.getElementById('nombre').value) {
-            alert('El nombre es obligatorio para actualizar.');
-            return;
-        }
-
-        const formData = {
-            nombre: document.getElementById('nombre').value,
-            nacionalidad: document.getElementById('nacionalidad').value
-        };
-        
-        try {
-            // Usa el método PUT y el ID en la URL
-            const endpoint = `${API_BASE_URL}/${id}`;
-            const response = await apiRequest('PUT', endpoint, formData);
-            const data = await response.json();
-
-            if (response.ok) {
-                alert('Autor actualizado exitosamente.');
-                limpiarFormulario();
-                cargarAutores(); 
-            } else {
-                alert('Error al actualizar: ' + (data.mensaje || 'Error desconocido.'));
-            }
-        } catch (error) {
-            console.error('Error de conexión:', error);
-            alert('No se pudo conectar al servidor API.');
-        }
-    });
-
-    // ==========================================================
-    // D - DELETE
-    // ==========================================================
-    btnDelete.addEventListener('click', async function() {
-        const id = inputId.value;
-        if (!id) {
-            alert('Debe seleccionar un autor de la lista para eliminar.');
-            return;
-        }
-
-        if (!confirm(`¿Está seguro de que desea eliminar el autor con ID ${id}?`)) {
-            return;
-        }
-        
-        try {
-            // Usa el método DELETE y el ID en la URL
-            const endpoint = `${API_BASE_URL}/${id}`;
-            const response = await apiRequest('DELETE', endpoint);
-            const data = await response.json();
-
-            if (response.ok) {
-                alert('Autor eliminado exitosamente.');
-                limpiarFormulario();
-                cargarAutores(); 
-            } else {
-                alert('Error al eliminar: ' + (data.mensaje || 'Error desconocido.'));
-            }
-        } catch (error) {
-            console.error('Error de conexión:', error);
-            alert('No se pudo conectar al servidor API.');
-        }
-    });
-
-
-    // ==========================================================
-    // R - READ (Carga de datos y Selección de fila)
-    // ==========================================================
-    
-    // 💡 Nueva función: Cargar datos de la fila seleccionada al formulario
-    function seleccionarAutor(autor) {
-        document.getElementById('id').value = autor.id;
-        document.getElementById('nombre').value = autor.nombre;
-        document.getElementById('nacionalidad').value = autor.nacionalidad;
+      if (res.ok) {
+        alert('Autor actualizado exitosamente.');
+        limpiarFormulario();
+        cargarAutores();
+      } else {
+        alert(`Error al actualizar: ${data.error || data.mensaje || 'Error desconocido.'}`);
+      }
+    } catch (e) {
+      console.error(e);
+      alert('No se pudo conectar al servidor API.');
     }
-    
-    async function cargarAutores() {
-        // ... (el código de la función cargarAutores que ya teníamos)
-        try {
-            const response = await fetch(API_BASE_URL);
-            
-            if (!response.ok) {
-                throw new Error(`Error en la API: ${response.statusText}`);
-            }
+  });
 
-            const autores = await response.json();
-            tableBody.innerHTML = ''; 
+  // ============================ DELETE =============================
+  btnDelete.addEventListener('click', async () => {
+    const id = inputId.value;
+    if (!id) return alert('Debe seleccionar un autor de la lista para eliminar.');
+    if (!confirm(`¿Eliminar autor con ID ${id}?`)) return;
 
-            if (autores.length === 0) {
-                tableBody.innerHTML = '<tr><td colspan="4" style="text-align: center;">No hay autores registrados.</td></tr>';
-                return;
-            }
+    try {
+      const res  = await apiRequest('DELETE', `${API_URL}/${id}`);
+      const data = await res.json();
 
-            autores.forEach(autor => {
-                const row = tableBody.insertRow();
-                
-                const fechaCreacion = new Date(autor.fecha_creacion).toLocaleString('es-CO', {
-                    year: 'numeric', month: '2-digit', day: '2-digit', 
-                    hour: '2-digit', minute: '2-digit', second: '2-digit'
-                });
-
-                row.innerHTML = `
-                    <td>${autor.id}</td>
-                    <td>${autor.nombre}</td>
-                    <td>${autor.nacionalidad || ''}</td>
-                    <td>${fechaCreacion}</td>
-                `;
-                
-                // Añadir evento click a la fila para cargar datos
-                row.addEventListener('click', () => seleccionarAutor(autor));
-            });
-
-        } catch (error) {
-            console.error('Error al cargar la lista de autores:', error);
-            tableBody.innerHTML = `<tr><td colspan="4" style="text-align: center; color: red;">Error de conexión: ${error.message}. ¿Está la API corriendo?</td></tr>`;
-        }
+      if (res.ok) {
+        alert('Autor eliminado exitosamente.');
+        limpiarFormulario();
+        cargarAutores();
+      } else {
+        alert(`Error al eliminar: ${data.error || data.mensaje || 'Error desconocido.'}`);
+      }
+    } catch (e) {
+      console.error(e);
+      alert('No se pudo conectar al servidor API.');
     }
+  });
 
-    // 4. ASIGNAR INICIO Y BOTÓN
-    updateListButton.onclick = cargarAutores;
-    document.addEventListener('DOMContentLoaded', cargarAutores);
-    
-    // Al limpiar el formulario, también reseteamos el ID
-    document.querySelector('button[type="reset"]').addEventListener('click', limpiarFormulario);
+  // ============================ READ ===============================
+  function seleccionarAutor(autor) {
+    inputId.value = autor.id;
+    document.getElementById('nombre').value = autor.nombre;
+    document.getElementById('nacionalidad').value = autor.nacionalidad || '';
+  }
 
+  async function cargarAutores() {
+    try {
+      const res = await fetch(API_URL);
+      if (!res.ok) throw new Error(`Error en la API: ${res.status} ${res.statusText}`);
+
+      const autores = await res.json();
+      tableBody.innerHTML = '';
+
+      if (!autores.length) {
+        tableBody.innerHTML = '<tr><td colspan="4" style="text-align:center;">No hay autores registrados.</td></tr>';
+        return;
+      }
+
+      autores.forEach(autor => {
+        const row = tableBody.insertRow();
+        const fechaCreacion = new Date(autor.fecha_creacion).toLocaleString('es-CO', {
+          year: 'numeric', month: '2-digit', day: '2-digit',
+          hour: '2-digit', minute: '2-digit', second: '2-digit'
+        });
+        row.innerHTML = `
+          <td>${autor.id}</td>
+          <td>${autor.nombre}</td>
+          <td>${autor.nacionalidad || ''}</td>
+          <td>${fechaCreacion}</td>
+        `;
+        row.addEventListener('click', () => seleccionarAutor(autor));
+      });
+    } catch (e) {
+      console.error('Error al cargar la lista de autores:', e);
+      tableBody.innerHTML = `<tr><td colspan="4" style="text-align:center;color:red;">Error de conexión: ${e.message}.</td></tr>`;
+    }
+  }
+
+  // ============================ Init ===============================
+  btnList.onclick = cargarAutores;
+  document.addEventListener('DOMContentLoaded', cargarAutores);
+  document.querySelector('button[type="reset"]').addEventListener('click', limpiarFormulario);
 </script>
-</body>
-</html>
